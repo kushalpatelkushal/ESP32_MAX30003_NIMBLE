@@ -16,8 +16,6 @@ MAX30003 max30003;
 #include "mbedtls/aes.h" //LIBRARY FOR AES128 METHOD FOR ENCRYPTION
 #include <esp_task_wdt.h>
 
-
-
 // LIBRARY FOR APPLYING LOW PASS FILTERING FOR HR,RR,ECG
 KickFiltersRT<signed long> filtersRT2;
 KickFiltersRT<uint16_t> filtersRT3;
@@ -91,7 +89,7 @@ public:
   }
   int getIntValue()
   {
-    Serial.println(intValue);
+    // Serial.println(intValue);
     return intValue;
   }
 };
@@ -109,7 +107,7 @@ class MyServerCallbacks : public BLEServerCallbacks
   void onDisconnect(BLEServer *pServer)
   {
     deviceConnected = false;
-    Serial.println(deviceConnected);
+    // Serial.println(deviceConnected);
   }
 };
 
@@ -119,11 +117,11 @@ void checkToReconnect() // added
   // disconnected so advertise
   if (!deviceConnected && oldDeviceConnected)
   {
-    delay(500);                  // give the bluetooth stack the chance to get things ready
-    //pServer->startAdvertising(); // restart advertising
+    delay(500); // give the bluetooth stack the chance to get things ready
+    // pServer->startAdvertising(); // restart advertising
     pService->start();
 
-  // Start advertising
+    // Start advertising
     pServer->getAdvertising()->start();
     oldDeviceConnected = deviceConnected;
   }
@@ -372,36 +370,51 @@ void loop()
       }
       uint16_t LEADOFF = 0;
 
-      TOTAL_COUNTER++;
-      if (max30003.ecgdata > -400000)
+      // TOTAL_COUNTER++;
+      if (ECG_filter > 0)
       {
         LEADOFF_COUNTER++;
       }
-
-      int perc_LEADOFF = (float)LEADOFF_COUNTER / TOTAL_COUNTER * 100;
-
-      if (perc_LEADOFF == 0)
+      else
+      {
+        LEADOFF_COUNTER = 0;
+      }
+      if(LEADOFF_COUNTER > 15)
       {
         LEADOFF_SEND_COUNTER++;
       }
-      else
-      {
-        LEADOFF_SEND_COUNTER = 0;
-      }
-      if (LEADOFF_SEND_COUNTER > 500)
+
+      // int perc_LEADOFF = (float)LEADOFF_COUNTER / TOTAL_COUNTER * 100;
+      // Serial.print(ECG_filter);
+      // Serial.print(",");
+      // Serial.print(perc_LEADOFF);
+      // Serial.print(",");
+      // if (perc_LEADOFF == 0)
+      // {
+      //   LEADOFF_SEND_COUNTER++;
+      // }
+      // else
+      // {
+      //   LEADOFF_SEND_COUNTER = 0;
+      // }
+      Serial.println(LEADOFF_SEND_COUNTER);
+      // Serial.println(max30003.ecgdata);
+
+      if (LEADOFF_SEND_COUNTER > 5)
       {
         LEADOFF_SEND_COUNTER = 0;
         LEADOFF = 1;
-        if (myValue = 2)
-        {
-          LEAD_OFF_COUNT++;
-        }
-      }
-      if (TOTAL_COUNTER > 1000)
-      {
-        TOTAL_COUNTER = 0;
         LEADOFF_COUNTER = 0;
+        // if (myValue = 2)
+        // {
+        //   LEAD_OFF_COUNT++;
+        // }
       }
+      // if (TOTAL_COUNTER > 1000)
+      // {
+      //   TOTAL_COUNTER = 0;
+      //   LEADOFF_COUNTER = 0;
+      // }
 
       //////////////////////////// Logic for ECG Stabilization /////////////////////////
       if (onetime_ECG == 0 && (Heartrate < 41 || Heartrate > 151))
@@ -451,9 +464,9 @@ void loop()
 
       pCharacteristic->setValue(encryptedData, 16);
       pCharacteristic->notify(true); // Send the value to the app!
-      Serial.print(xPortGetFreeHeapSize());
-      Serial.print(",");
-      Serial.println(xPortGetMinimumEverFreeHeapSize());
+      // Serial.print(xPortGetFreeHeapSize());
+      // Serial.print(",");
+      // Serial.println(xPortGetMinimumEverFreeHeapSize());
       // Serial.print(",");
       // Serial.println(deviceConnected);
       indicate = true;
@@ -553,10 +566,10 @@ void loop()
       }
       Serial.println(); // Print a newline at the end
 
-      while(deviceConnected)
+      while (deviceConnected)
       {
-      pCharacteristic_STAT->setValue(encryptedData1, 16);
-      pCharacteristic_STAT->notify(); // Send the value to the app!
+        pCharacteristic_STAT->setValue(encryptedData1, 16);
+        pCharacteristic_STAT->notify(); // Send the value to the app!
       }
 
       SQI = 0;
@@ -567,6 +580,5 @@ void loop()
       delay(500);
       ESP.restart();
     }
-
   }
 }
